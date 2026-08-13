@@ -94,7 +94,20 @@ p_yes = 1 / (1 + e^(-logit))
 
 ## Скриншоты
 
-См. папку [`screenshots/`](./screenshots/).
+См. папку [`screenshots/`](./screenshots/):
+
+1. `01-list.png` — список событий  
+2. `02-card.png` — карточка прогноза с формулой  
+3. `03-methodology.png` — методика  
+
+## Git
+
+Локальный репозиторий инициализирован (ветка `main`). Чтобы получить ссылку на GitHub:
+
+```bash
+gh repo create polymarket-predictor --public --source=. --remote=origin --push
+# или: git remote add origin <url> && git push -u origin main
+```
 
 ## Страницы
 
