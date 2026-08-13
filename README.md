@@ -102,11 +102,10 @@ p_yes = 1 / (1 + e^(-logit))
 
 ## Git
 
-Локальный репозиторий инициализирован (ветка `main`). Чтобы получить ссылку на GitHub:
+Репозиторий: https://github.com/ArIion-69/Polymarket-test
 
 ```bash
-gh repo create polymarket-predictor --public --source=. --remote=origin --push
-# или: git remote add origin <url> && git push -u origin main
+git clone https://github.com/ArIion-69/Polymarket-test.git
 ```
 
 ## Страницы
