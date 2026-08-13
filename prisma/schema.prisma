@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Source {
+  id          String       @id @default(cuid())
+  key         String       @unique
+  name        String
+  kind        String
+  baseUrl     String
+  description String?
+  createdAt   DateTime     @default(now())
+  ingestRuns  IngestRun[]
+  rawRecords  RawRecord[]
+}
+
+model IngestRun {
+  id           String      @id @default(cuid())
+  sourceId     String
+  source       Source      @relation(fields: [sourceId], references: [id])
+  startedAt    DateTime    @default(now())
+  finishedAt   DateTime?
+  status       String      @default("running")
+  marketsCount Int         @default(0)
+  newsCount    Int         @default(0)
+  message      String?
+  rawRecords   RawRecord[]
+}
+
+model RawRecord {
+  id          String    @id @default(cuid())
+  sourceId    String
+  source      Source    @relation(fields: [sourceId], references: [id])
+  ingestRunId String?
+  ingestRun   IngestRun? @relation(fields: [ingestRunId], references: [id])
+  externalKey String?
+  payload     String
+  fetchedAt   DateTime  @default(now())
+
+  @@index([sourceId, fetchedAt])
+}
+
+model Event {
+  id              String            @id @default(cuid())
+  externalId      String            @unique
+  slug            String?
+  question        String
+  description     String?
+  category        String?
+  deadline        DateTime?
+  status          String            @default("open")
+  resolution      String?
+  resolvedAt      DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  snapshots       MarketSnapshot[]
+  newsItems       NewsItem[]
+  indicators      Indicator[]
+  forecasts       Forecast[]
+  evaluations     Evaluation[]
+}
+
+model MarketSnapshot {
+  id                 String   @id @default(cuid())
+  eventId            String
+  event              Event    @relation(fields: [eventId], references: [id])
+  yesPrice           Float
+  noPrice            Float
+  volume             Float    @default(0)
+  volume24h          Float    @default(0)
+  liquidity          Float    @default(0)
+  spread             Float    @default(0)
+  oneDayPriceChange  Float    @default(0)
+  oneWeekPriceChange Float    @default(0)
+  capturedAt         DateTime @default(now())
+
+  @@index([eventId, capturedAt])
+}
+
+model NewsItem {
+  id             String   @id @default(cuid())
+  eventId        String
+  event          Event    @relation(fields: [eventId], references: [id])
+  title          String
+  url            String
+  publisher      String?
+  publishedAt    DateTime?
+  polarity       Float    @default(0)
+  matchedTokens  String   @default("[]")
+  recencyWeight  Float    @default(0)
+  relevance      Float    @default(0)
+  capturedAt     DateTime @default(now())
+
+  @@index([eventId, capturedAt])
+  @@unique([eventId, url])
+}
+
+model Indicator {
+  id             String   @id @default(cuid())
+  eventId        String
+  event          Event    @relation(fields: [eventId], references: [id])
+  marketYes      Float
+  momentum       Float
+  newsPolarity   Float
+  newsCoverage   Float
+  newsRecency    Float
+  liquidityScore Float
+  computedAt     DateTime @default(now())
+
+  @@index([eventId, computedAt])
+}
+
+model Forecast {
+  id            String            @id @default(cuid())
+  eventId       String
+  event         Event             @relation(fields: [eventId], references: [id])
+  pYes          Float
+  pMarket       Float
+  delta         Float
+  confidence    Float
+  riskLevel     String
+  riskReasons   String
+  argumentsJson String
+  formulaJson   String
+  createdAt     DateTime          @default(now())
+  factors       ForecastFactor[]
+  evaluations   Evaluation[]
+
+  @@index([eventId, createdAt])
+}
+
+model ForecastFactor {
+  id          String   @id @default(cuid())
+  forecastId  String
+  forecast    Forecast @relation(fields: [forecastId], references: [id], onDelete: Cascade)
+  key         String
+  label       String
+  weight      Float
+  rawValue    Float
+  contribution Float
+  explanation String
+}
+
+model Evaluation {
+  id              String   @id @default(cuid())
+  eventId         String
+  event           Event    @relation(fields: [eventId], references: [id])
+  forecastId      String
+  forecast        Forecast @relation(fields: [forecastId], references: [id])
+  outcomeYes      Float
+  brierScore      Float
+  wasWrong        Boolean
+  attribution     String
+  revisionTriggers String?
+  evaluatedAt     DateTime @default(now())
+
+  @@index([eventId, evaluatedAt])
+}

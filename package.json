@@ -1,0 +1,36 @@
+{
+  "name": "polymarket-predictor",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
+    "ingest": "tsx scripts/ingest.ts",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.14.0",
+    "fast-xml-parser": "^5.2.5",
+    "next": "^15.4.6",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.11",
+    "@types/node": "^22.17.1",
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7",
+    "eslint": "^9.32.0",
+    "eslint-config-next": "^15.4.6",
+    "prisma": "^6.14.0",
+    "tailwindcss": "^4.1.11",
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.2"
+  }
+}
