@@ -1,51 +1,17 @@
-import { spawn } from "child_process";
-import path from "path";
 import { NextResponse } from "next/server";
+import { runIngest } from "@/lib/ingest";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 export const maxDuration = 300;
-
-function runIngest(): Promise<{ ok: boolean; output: string }> {
-  return new Promise((resolve) => {
-    const script = path.join(process.cwd(), "scripts", "ingest.ts");
-    const child = spawn("npx", ["tsx", script], {
-      cwd: process.cwd(),
-      env: process.env,
-      shell: true,
-    });
-
-    let output = "";
-    child.stdout.on("data", (d) => {
-      output += d.toString();
-    });
-    child.stderr.on("data", (d) => {
-      output += d.toString();
-    });
-    child.on("close", (code) => {
-      resolve({ ok: code === 0, output });
-    });
-  });
-}
 
 export async function POST() {
   try {
     const result = await runIngest();
-    if (!result.ok) {
-      return NextResponse.json(
-        { error: "Ingest завершился с ошибкой", details: result.output.slice(-2000) },
-        { status: 500 }
-      );
-    }
-    const markets = result.output.match(/Markets=(\d+)/)?.[1] ?? "?";
-    const news = result.output.match(/news=(\d+)/)?.[1] ?? "?";
-    return NextResponse.json({
-      message: `Обновлено: рынков ${markets}, новостей ${news}`,
-      output: result.output.slice(-1500),
-    });
+    return NextResponse.json(result);
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Unknown error" },
-      { status: 500 }
-    );
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Ingest failed:", err);
+    return NextResponse.json({ error: `Не удалось обновить данные: ${message}` }, { status: 500 });
   }
 }
