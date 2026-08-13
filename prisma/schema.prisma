@@ -161,3 +161,42 @@ model Evaluation {
 
   @@index([eventId, evaluatedAt])
 }
+
+model ClickerSave {
+  id            String            @id @default("local")
+  cope          Float             @default(0)
+  totalCope     Float             @default(0)
+  clicks        Int               @default(0)
+  stage         Int               @default(0)
+  upgradesJson  String            @default("{}")
+  premiumJson   String            @default("{}")
+  lastTick      DateTime          @default(now())
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  purchases     ClickerPurchase[]
+  events        ClickerEventLog[]
+}
+
+model ClickerPurchase {
+  id        String      @id @default(cuid())
+  saveId    String
+  save      ClickerSave @relation(fields: [saveId], references: [id])
+  sku       String
+  kind      String
+  cost      Float       @default(0)
+  createdAt DateTime    @default(now())
+
+  @@index([saveId, createdAt])
+}
+
+model ClickerEventLog {
+  id        String      @id @default(cuid())
+  saveId    String
+  save      ClickerSave @relation(fields: [saveId], references: [id])
+  kind      String
+  title     String
+  detail    String
+  createdAt DateTime    @default(now())
+
+  @@index([saveId, createdAt])
+}
