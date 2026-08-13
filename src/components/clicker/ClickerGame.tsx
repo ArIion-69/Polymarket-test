@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   applyIdle,
@@ -21,6 +22,7 @@ import {
   type PremiumKey,
   type UpgradeKey,
 } from "@/lib/clicker/economy";
+import { useClickerAudio } from "@/lib/clicker/audio";
 
 type LogItem = { id: string; kind: string; title: string; detail: string; createdAt: string };
 type PurchaseItem = { id: string; sku: string; kind: string; cost: number; createdAt: string };
@@ -65,36 +67,29 @@ const EVENT_POOL: Array<Omit<LiveEvent, "until">> = [
   },
 ];
 
-function FineDog({ fire, sipping }: { fire: number; sipping: boolean }) {
-  const flames = Math.min(5, Math.max(1, fire));
+function MemeArt({ sipping, fire }: { sipping: boolean; fire: number }) {
   return (
-    <svg viewBox="0 0 220 180" className="h-44 w-full max-w-xs sm:h-56" aria-hidden>
-      {Array.from({ length: flames * 3 }).map((_, i) => (
-        <rect
-          key={i}
-          x={10 + ((i * 37) % 190)}
-          y={20 + ((i * 13) % 90)}
-          width={8 + (i % 3) * 4}
-          height={28 + (i % 4) * 8}
-          rx={4}
-          fill={i % 2 ? "#f97316" : "#ef4444"}
-          opacity={0.35 + (i % 5) * 0.08}
+    <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-orange-400/25 bg-black/40">
+      <div
+        className={`relative aspect-square w-full transition duration-150 ${sipping ? "scale-[1.03] brightness-110" : ""}`}
+      >
+        <Image
+          src="/clicker/this-is-fine.png"
+          alt="This is fine — пёс пьёт кофе в горящей комнате"
+          fill
+          priority
+          sizes="(max-width: 768px) 100vw, 420px"
+          className="object-cover object-center"
         />
-      ))}
-      <ellipse cx="110" cy="148" rx="70" ry="14" fill="#1e293b" />
-      <g transform={sipping ? "translate(0,-4)" : undefined}>
-        <ellipse cx="110" cy="118" rx="46" ry="28" fill="#eab308" />
-        <circle cx="92" cy="108" r="7" fill="#0f172a" />
-        <circle cx="124" cy="108" r="7" fill="#0f172a" />
-        <path d="M96 126 Q110 134 124 126" stroke="#0f172a" strokeWidth="3" fill="none" />
-        <ellipse cx="148" cy="122" rx="14" ry="10" fill="#fef3c7" />
-        <rect x="154" y="108" width="6" height="14" fill="#fef3c7" />
-        <path d="M70 118 Q48 100 56 86" stroke="#eab308" strokeWidth="8" fill="none" />
-      </g>
-      <text x="110" y="24" textAnchor="middle" fill="#fde68a" fontSize="13" fontFamily="ui-sans-serif">
-        this is fine
-      </text>
-    </svg>
+        <div
+          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-orange-950/50 via-transparent to-transparent"
+          style={{ opacity: 0.35 + fire * 0.08 }}
+        />
+        <div className="pointer-events-none absolute left-3 top-3 rounded-full bg-black/55 px-2.5 py-1 text-[11px] uppercase tracking-wide text-amber-100">
+          this is fine
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -117,6 +112,7 @@ export function ClickerGame({
   const stateRef = useRef(state);
   const clicksSinceEvent = useRef(0);
   const floaterId = useRef(0);
+  const { muted, toggleMute, play, unlock } = useClickerAudio();
 
   stateRef.current = state;
   const stageMeta = STAGES[state.stage] ?? STAGES[0];
@@ -204,15 +200,18 @@ export function ClickerGame({
         persist(after);
       }
       setLive({ ...pick, until: Date.now() + duration });
+      void play(pick.kind);
       void recordEvent(pick.kind, pick.title, pick.detail, after);
     },
-    [live, persist, recordEvent]
+    [live, persist, play, recordEvent]
   );
 
   function sip() {
+    void unlock();
     if (ad) return;
     if (live?.blockClicks) {
       setMessage("Пожарные не дают пить кофе");
+      void play("crisis");
       return;
     }
     const result = resolveClick(state, combo);
@@ -232,6 +231,8 @@ export function ClickerGame({
     window.setTimeout(() => setSipping(false), 120);
     if (comboTimer.current) window.clearTimeout(comboTimer.current);
     comboTimer.current = window.setTimeout(() => setCombo(0), 700);
+
+    void play(result.crit ? "crit" : "sip");
 
     const id = ++floaterId.current;
     setFloaters((f) => [...f.slice(-8), { id, text: `+${formatCope(gain)}`, crit: result.crit }]);
@@ -263,6 +264,7 @@ export function ClickerGame({
       ...p,
     ].slice(0, 12));
     setMessage(`Куплено: ${UPGRADES.find((u) => u.key === key)?.name}`);
+    void play("buy");
     await fetch("/api/clicker", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -289,6 +291,7 @@ export function ClickerGame({
       ...p,
     ].slice(0, 12));
     setMessage("Демо-покупка применена. Реальной оплаты нет.");
+    void play("buy");
     await fetch("/api/clicker", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -322,11 +325,25 @@ export function ClickerGame({
               Глоток кофе (клик/тап) даёт cope. Улучшения меняют клики, idle, криты и комбо.
             </p>
           </div>
-          {state.premium.battlePass ? (
-            <span className="rounded-full border border-amber-400/40 bg-amber-500/15 px-3 py-1 text-xs text-amber-200">
-              Сезон дыма
-            </span>
-          ) : null}
+          <div className="flex items-center gap-2">
+            {state.premium.battlePass ? (
+              <span className="rounded-full border border-amber-400/40 bg-amber-500/15 px-3 py-1 text-xs text-amber-200">
+                Сезон дыма
+              </span>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => {
+                void unlock();
+                toggleMute();
+              }}
+              className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-slate-200 hover:bg-white/10"
+              aria-label={muted ? "Включить звук" : "Выключить звук"}
+              title={muted ? "Включить звук" : "Выключить звук"}
+            >
+              {muted ? "🔇 Звук выкл" : "🔊 Звук вкл"}
+            </button>
+          </div>
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -381,7 +398,7 @@ export function ClickerGame({
             onClick={sip}
             className="relative mx-auto flex w-full max-w-md flex-col items-center rounded-3xl border border-orange-400/20 bg-gradient-to-b from-orange-950/40 to-slate-950 p-4 transition active:scale-[0.98] sm:p-6"
           >
-            <FineDog fire={stageMeta.fire} sipping={sipping} />
+            <MemeArt fire={stageMeta.fire} sipping={sipping} />
             <span className="mt-2 text-lg font-semibold text-amber-100">Глоток кофе</span>
             <span className="text-xs text-slate-400">тап / клик · {state.clicks} глотков</span>
             {comboCap(state) > 0 ? (
