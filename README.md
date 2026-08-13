@@ -11,10 +11,10 @@
 
 ## Источники данных (≥2)
 
-| Источник | Что берём |
-|---|---|
+| Источник                                                            | Что берём                                                                                |
+| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | **Polymarket Gamma API** `https://gamma-api.polymarket.com/markets` | вопрос, YES/NO цена, volume, volume24h, liquidity, spread, oneDay/oneWeek change, статус |
-| **Google News RSS** `https://news.google.com/rss/search?q=…` | заголовки, издатель, дата; запрос строится из сущностей вопроса |
+| **Google News RSS** `https://news.google.com/rss/search?q=…`        | заголовки, издатель, дата; запрос строится из сущностей вопроса                          |
 
 Ключи API не обязательны. Опционально `ZAI_API_KEY` — только пересказ уже посчитанных аргументов (вероятность AI **не** считает).
 
@@ -39,15 +39,15 @@ npm run dev            # http://localhost:3000
 
 ## Схема базы
 
-- `sources` — polymarket, google_news  
-- `ingest_runs` — история обновлений  
-- `raw_records` — сырой JSON/фрагмент ответа  
-- `events` — бинарный рынок  
-- `market_snapshots` — снимки цен/объёмов  
-- `news_items` — новости с polarity/recency/relevance  
-- `indicators` — нормализованные показатели  
-- `forecasts` + `forecast_factors` — прогноз и вклады в logit  
-- `evaluations` — Brier / промах / условия пересмотра  
+- `sources` — polymarket, google_news
+- `ingest_runs` — история обновлений
+- `raw_records` — сырой JSON/фрагмент ответа
+- `events` — бинарный рынок
+- `market_snapshots` — снимки цен/объёмов
+- `news_items` — новости с polarity/recency/relevance
+- `indicators` — нормализованные показатели
+- `forecasts` + `forecast_factors` — прогноз и вклады в logit
+- `evaluations` — Brier / промах / условия пересмотра
 
 Поток: API/RSS → raw → snapshots/news → indicators → forecast (только из БД в UI).
 
@@ -96,9 +96,9 @@ p_yes = 1 / (1 + e^(-logit))
 
 См. папку [`screenshots/`](./screenshots/):
 
-1. `01-list.png` — список событий  
-2. `02-card.png` — карточка прогноза с формулой  
-3. `03-methodology.png` — методика  
+1. `01-list.png` — список событий
+2. `02-card.png` — карточка прогноза с формулой
+3. `03-methodology.png` — методика
 
 ## Git
 
@@ -110,9 +110,9 @@ git clone https://github.com/ArIion-69/Polymarket-test.git
 
 ## Страницы
 
-- `/` — список событий  
-- `/events/[id]` — карточка прогноза  
-- `/methodology` — методика  
+- `/` — список событий
+- `/events/[id]` — карточка прогноза
+- `/methodology` — методика
 
 ## Лицензия
 
